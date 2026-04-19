@@ -59,8 +59,7 @@ Manual deployment is available through [`.github/workflows/runpod-pod.yml`](./.g
 
 Set this repository secret before running the workflow:
 
-- `AWS_ACCESS_KEY_ID` — IAM access key for the Terraform S3 backend user
-- `AWS_SECRET_ACCESS_KEY` — IAM secret key for the Terraform S3 backend user
+- `AWS_ROLE_TO_ASSUME` — IAM role ARN that GitHub Actions assumes with OIDC
 - `RUNPOD_API_KEY` — RunPod API key used by the Terraform provider
 - `TELEGRAM_BOT_TOKEN` — Telegram bot token used by Terraform to send the deployment message
 - `TELEGRAM_CHAT_ID` — Telegram channel username or numeric chat ID for the message target
@@ -75,6 +74,8 @@ The workflow also accepts `ollama_model` and `use_spot` inputs, which map direct
 
 For `apply`, the workflow now requires the Telegram secrets too so the endpoint notification can be sent after the pod becomes ready.
 
+GitHub Actions authenticates to AWS using OpenID Connect, so you no longer need long-lived AWS access key secrets in GitHub. You do need an IAM role in AWS that trusts `token.actions.githubusercontent.com` and is scoped to this repository.
+
 `apply` and `destroy` use the protected GitHub Environment `runpod-production`. Configure required reviewers for that environment in GitHub before relying on those actions.
 
 ## Terraform Backend
@@ -86,6 +87,19 @@ Terraform state is stored in S3:
 - Region: `ap-southeast-1`
 
 For local use, run Terraform with AWS credentials that can access that bucket, for example via `aws-vault exec`.
+
+Example local AWS verification:
+
+```bash
+aws-vault exec toanvvsg -- aws sts get-caller-identity
+```
+
+Example OIDC role creation flow:
+
+1. Create or confirm the GitHub OIDC provider exists in AWS.
+2. Create an IAM role trusted by `token.actions.githubusercontent.com`.
+3. Attach only the S3 and IAM permissions this Terraform stack needs.
+4. Store the role ARN in GitHub as `AWS_ROLE_TO_ASSUME`.
 
 ## Cost
 

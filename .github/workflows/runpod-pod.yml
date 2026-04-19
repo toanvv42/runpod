@@ -25,6 +25,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
   group: runpod-pod-${{ github.ref }}
@@ -38,6 +39,7 @@ jobs:
     timeout-minutes: 45
     env:
       AWS_REGION: ap-southeast-1
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       TF_VAR_runpod_api_key: ${{ secrets.RUNPOD_API_KEY }}
       TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TF_VAR_telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -54,14 +56,17 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Validate secret
         run: |
           test -n "${TF_VAR_runpod_api_key}" || {
             echo "RUNPOD_API_KEY secret is not set."
+            exit 1
+          }
+          test -n "${AWS_ROLE_TO_ASSUME}" || {
+            echo "AWS_ROLE_TO_ASSUME secret is not set."
             exit 1
           }
 
@@ -86,6 +91,7 @@ jobs:
       name: runpod-production
     env:
       AWS_REGION: ap-southeast-1
+      AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
       TF_VAR_runpod_api_key: ${{ secrets.RUNPOD_API_KEY }}
       TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TF_VAR_telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -102,14 +108,17 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Validate secret
         run: |
           test -n "${TF_VAR_runpod_api_key}" || {
             echo "RUNPOD_API_KEY secret is not set."
+            exit 1
+          }
+          test -n "${AWS_ROLE_TO_ASSUME}" || {
+            echo "AWS_ROLE_TO_ASSUME secret is not set."
             exit 1
           }
 
