@@ -7,6 +7,7 @@ Deploy Gemma 4 31B on RunPod as a GPU pod with Ollama.
 - [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
 - [pass](https://www.passwordstore.org/) with the following entries:
   - `pass apikey/runpod` — RunPod API key
+- AWS credentials with access to the S3 backend bucket `terraform-state-421427265342-ap-southeast-1-runpod`
 
 ## Structure
 
@@ -37,6 +38,8 @@ Manual deployment is available through [`.github/workflows/runpod-pod.yml`](./.g
 
 Set this repository secret before running the workflow:
 
+- `AWS_ACCESS_KEY_ID` — IAM access key for the Terraform S3 backend user
+- `AWS_SECRET_ACCESS_KEY` — IAM secret key for the Terraform S3 backend user
 - `RUNPOD_API_KEY` — RunPod API key used by the Terraform provider
 
 Then open the `RunPod Pod` workflow in GitHub Actions and choose one of:
@@ -48,6 +51,16 @@ Then open the `RunPod Pod` workflow in GitHub Actions and choose one of:
 The workflow also accepts `ollama_model` and `use_spot` inputs, which map directly to the Terraform variables in this repo.
 
 `apply` and `destroy` use the protected GitHub Environment `runpod-production`. Configure required reviewers for that environment in GitHub before relying on those actions.
+
+## Terraform Backend
+
+Terraform state is stored in S3:
+
+- Bucket: `terraform-state-421427265342-ap-southeast-1-runpod`
+- Key: `runpod/terraform.tfstate`
+- Region: `ap-southeast-1`
+
+For local use, run Terraform with AWS credentials that can access that bucket, for example via `aws-vault exec`.
 
 ## Cost
 

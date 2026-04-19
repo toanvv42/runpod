@@ -1,4 +1,12 @@
 terraform {
+  backend "s3" {
+    bucket       = "terraform-state-421427265342-ap-southeast-1-runpod"
+    key          = "runpod/terraform.tfstate"
+    region       = "ap-southeast-1"
+    encrypt      = true
+    use_lockfile = true
+  }
+
   required_providers {
     runpod = {
       source  = "decentralized-infrastructure/runpod"
