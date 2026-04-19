@@ -9,6 +9,12 @@ variable "ollama_model" {
   description = "Ollama model tag to pull (e.g. gemma4:31b, gemma4:26b)"
 }
 
+variable "ollama_image_name" {
+  type        = string
+  default     = "ollama/ollama:latest"
+  description = "Container image for the Ollama pod. Override this to pin a specific Ollama version or use a custom compatibility wrapper image."
+}
+
 variable "use_spot" {
   type        = bool
   default     = true

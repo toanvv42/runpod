@@ -29,13 +29,15 @@ resource "random_id" "pod_suffix" {
 }
 
 locals {
-  ollama_base_url = "https://${runpod_pod.gemma4_ollama.id}-11434.proxy.runpod.net"
-  model           = var.ollama_model
+  ollama_base_url   = "https://${runpod_pod.gemma4_ollama.id}-11434.proxy.runpod.net"
+  ollama_native_url = "${local.ollama_base_url}/api"
+  ollama_openai_url = "${local.ollama_base_url}/v1"
+  model             = var.ollama_model
 }
 
 resource "runpod_pod" "gemma4_ollama" {
   name              = "gemma4-ollama-${random_id.pod_suffix.hex}"
-  image_name        = "ollama/ollama:latest"
+  image_name        = var.ollama_image_name
   gpu_type_ids      = ["NVIDIA A100-SXM4-80GB"]
   gpu_count         = 1
   cloud_type        = "COMMUNITY"
@@ -113,7 +115,8 @@ resource "null_resource" "setup" {
       TELEGRAM_BOT_TOKEN = var.telegram_bot_token
       TELEGRAM_CHAT_ID   = var.telegram_chat_id
       POD_ID             = runpod_pod.gemma4_ollama.id
-      OLLAMA_ENDPOINT    = "${local.ollama_base_url}/v1"
+      OLLAMA_NATIVE_API  = local.ollama_native_url
+      OLLAMA_OPENAI_API  = local.ollama_openai_url
       MODEL              = local.model
     }
 
@@ -123,8 +126,8 @@ resource "null_resource" "setup" {
         exit 0
       fi
 
-      MESSAGE=$(printf 'RunPod Ollama is ready\nPod ID: %s\nEndpoint: %s\nModel: %s\n' \
-        "$${POD_ID}" "$${OLLAMA_ENDPOINT}" "$${MODEL}")
+      MESSAGE=$(printf 'RunPod Ollama is ready\nPod ID: %s\nNative API: %s\nOpenAI API (experimental): %s\nModel: %s\n' \
+        "$${POD_ID}" "$${OLLAMA_NATIVE_API}" "$${OLLAMA_OPENAI_API}" "$${MODEL}")
 
       if curl -fsS -X POST "https://api.telegram.org/bot$${TELEGRAM_BOT_TOKEN}/sendMessage" \
         --data-urlencode "chat_id=$${TELEGRAM_CHAT_ID}" \
@@ -142,4 +145,12 @@ resource "null_resource" "setup" {
 # Outputs
 output "pod_id" {
   value = runpod_pod.gemma4_ollama.id
+}
+
+output "ollama_native_api" {
+  value = local.ollama_native_url
+}
+
+output "ollama_openai_api_experimental" {
+  value = local.ollama_openai_url
 }

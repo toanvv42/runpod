@@ -32,7 +32,26 @@ make output         # show Terraform outputs
 make destroy        # tear down pod
 ```
 
-After a successful `apply`, the pod endpoint is sent to Telegram if `telegram_bot_token` and `telegram_chat_id` are set. The endpoint is no longer printed in the default Terraform output.
+After a successful `apply`, the pod endpoints are sent to Telegram if `telegram_bot_token` and `telegram_chat_id` are set. Terraform also exposes both the native Ollama API and the OpenAI-compatible API as outputs.
+
+### Endpoint Selection
+
+Prefer the native Ollama API for direct integrations:
+
+- Native Ollama API: `https://<pod-id>-11434.proxy.runpod.net/api`
+- OpenAI-compatible API: `https://<pod-id>-11434.proxy.runpod.net/v1`
+
+The OpenAI-compatible `/v1` endpoint should be treated as experimental. In testing with `gemma4:31b`, it may expose a non-standard `message.reasoning` field and can consume completion budget before producing `message.content`. Use `/api/chat` or `/api/generate` when you want the most predictable behavior from Ollama itself.
+
+### Image Pinning
+
+The Terraform variable `ollama_image_name` controls the deployed container image:
+
+```bash
+TF_VAR_ollama_image_name=ollama/ollama:latest make apply
+```
+
+Override this variable to pin a specific Ollama release or to deploy a custom wrapper image if you want to put a compatibility proxy in front of the native Ollama server.
 
 ## Telegram Notifications
 
@@ -48,7 +67,8 @@ To receive the deployment result in a Telegram channel:
 The notification includes:
 
 - pod ID
-- Ollama endpoint
+- native Ollama API endpoint
+- OpenAI-compatible API endpoint (marked experimental)
 - model name
 
 If you prefer to use environment variables directly, export `TF_VAR_telegram_bot_token` and `TF_VAR_telegram_chat_id` before running Terraform.
