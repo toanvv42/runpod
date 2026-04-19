@@ -14,3 +14,17 @@ variable "use_spot" {
   default     = true
   description = "Use spot instances to reduce cost"
 }
+
+variable "telegram_bot_token" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Optional Telegram bot token used to send the deployment notification"
+}
+
+variable "telegram_chat_id" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Optional Telegram chat or channel ID used for the deployment notification"
+}

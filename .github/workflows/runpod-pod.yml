@@ -39,6 +39,8 @@ jobs:
     env:
       AWS_REGION: ap-southeast-1
       TF_VAR_runpod_api_key: ${{ secrets.RUNPOD_API_KEY }}
+      TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TF_VAR_telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
       TF_VAR_ollama_model: ${{ inputs.ollama_model }}
       TF_VAR_use_spot: ${{ inputs.use_spot }}
 
@@ -85,6 +87,8 @@ jobs:
     env:
       AWS_REGION: ap-southeast-1
       TF_VAR_runpod_api_key: ${{ secrets.RUNPOD_API_KEY }}
+      TF_VAR_telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TF_VAR_telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
       TF_VAR_ollama_model: ${{ inputs.ollama_model }}
       TF_VAR_use_spot: ${{ inputs.use_spot }}
 
@@ -106,6 +110,18 @@ jobs:
         run: |
           test -n "${TF_VAR_runpod_api_key}" || {
             echo "RUNPOD_API_KEY secret is not set."
+            exit 1
+          }
+
+      - name: Validate telegram secrets
+        if: inputs.action == 'apply'
+        run: |
+          test -n "${TF_VAR_telegram_bot_token}" || {
+            echo "TELEGRAM_BOT_TOKEN secret is not set."
+            exit 1
+          }
+          test -n "${TF_VAR_telegram_chat_id}" || {
+            echo "TELEGRAM_CHAT_ID secret is not set."
             exit 1
           }
 
