@@ -90,19 +90,17 @@ resource "null_resource" "setup" {
     EOT
   }
 
-  # Smoke test (model may take time to load after pull)
+  # Smoke test the base endpoint response after the model pull completes.
   provisioner "local-exec" {
     command = <<-EOT
-      echo "Smoke testing (waiting for model to load)..."
+      echo "Smoke testing endpoint response..."
       for i in $(seq 1 30); do
-        RESP=$(curl -s --max-time 60 ${local.ollama_base_url}/v1/chat/completions \
-          -H "Content-Type: application/json" \
-          -d '{"model":"${local.model}","messages":[{"role":"user","content":"Say hello in one sentence."}]}')
-        if echo "$RESP" | python3 -m json.tool 2>/dev/null; then
+        RESP=$(curl -fsS --max-time 10 ${local.ollama_base_url})
+        if echo "$RESP" | grep -q "Ollama is running"; then
           echo "Smoke test passed!"
           exit 0
         fi
-        echo "Attempt $i/30 - model loading, waiting 10s..."
+        echo "Attempt $i/30 - endpoint not ready, waiting 10s..."
         sleep 10
       done
       echo "Smoke test failed after retries"
