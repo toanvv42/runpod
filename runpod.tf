@@ -107,14 +107,39 @@ resource "null_resource" "setup" {
       exit 1
     EOT
   }
+
+  provisioner "local-exec" {
+    environment = {
+      TELEGRAM_BOT_TOKEN = var.telegram_bot_token
+      TELEGRAM_CHAT_ID   = var.telegram_chat_id
+      POD_ID             = runpod_pod.gemma4_ollama.id
+      OLLAMA_ENDPOINT    = "${local.ollama_base_url}/v1"
+      MODEL              = local.model
+    }
+
+    command = <<-EOT
+      if [ -z "$${TELEGRAM_BOT_TOKEN}" ] || [ -z "$${TELEGRAM_CHAT_ID}" ]; then
+        echo "Telegram notification skipped: token or chat id not set."
+        exit 0
+      fi
+
+      MESSAGE=$(printf 'RunPod Ollama is ready\nPod ID: %s\nEndpoint: %s\nModel: %s\n' \
+        "$${POD_ID}" "$${OLLAMA_ENDPOINT}" "$${MODEL}")
+
+      if curl -fsS -X POST "https://api.telegram.org/bot$${TELEGRAM_BOT_TOKEN}/sendMessage" \
+        --data-urlencode "chat_id=$${TELEGRAM_CHAT_ID}" \
+        --data-urlencode "text=$${MESSAGE}" \
+        --data-urlencode "disable_web_page_preview=true" \
+        > /dev/null; then
+        echo "Telegram notification sent."
+      else
+        echo "Telegram notification failed; continuing."
+      fi
+    EOT
+  }
 }
 
 # Outputs
 output "pod_id" {
   value = runpod_pod.gemma4_ollama.id
-}
-
-output "ollama_endpoint" {
-  description = "Ollama OpenAI-compatible API base URL"
-  value       = "${local.ollama_base_url}/v1"
 }
