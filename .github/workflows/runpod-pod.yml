@@ -1,0 +1,115 @@
+name: RunPod Pod
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Terraform action to run
+        required: true
+        default: plan
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+      ollama_model:
+        description: Ollama model tag to pull
+        required: true
+        default: gemma4:31b
+        type: string
+      use_spot:
+        description: Use spot instances
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runpod-pod-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Terraform plan
+    if: inputs.action == 'plan'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TF_VAR_runpod_api_key: ${{ secrets.RUNPOD_API_KEY }}
+      TF_VAR_ollama_model: ${{ inputs.ollama_model }}
+      TF_VAR_use_spot: ${{ inputs.use_spot }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Validate secret
+        run: |
+          test -n "${TF_VAR_runpod_api_key}" || {
+            echo "RUNPOD_API_KEY secret is not set."
+            exit 1
+          }
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        run: terraform plan -input=false -no-color
+
+  deploy:
+    name: Terraform ${{ inputs.action }}
+    if: inputs.action == 'apply' || inputs.action == 'destroy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: runpod-production
+    env:
+      TF_VAR_runpod_api_key: ${{ secrets.RUNPOD_API_KEY }}
+      TF_VAR_ollama_model: ${{ inputs.ollama_model }}
+      TF_VAR_use_spot: ${{ inputs.use_spot }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Validate secret
+        run: |
+          test -n "${TF_VAR_runpod_api_key}" || {
+            echo "RUNPOD_API_KEY secret is not set."
+            exit 1
+          }
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform apply
+        if: inputs.action == 'apply'
+        run: terraform apply -input=false -auto-approve -no-color
+
+      - name: Terraform output
+        if: inputs.action == 'apply'
+        run: terraform output -no-color
+
+      - name: Terraform destroy
+        if: inputs.action == 'destroy'
+        run: terraform destroy -input=false -auto-approve -no-color

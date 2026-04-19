@@ -31,6 +31,24 @@ make destroy        # tear down pod
 
 **Endpoint:** `https://<POD_ID>-11434.proxy.runpod.net/v1` (OpenAI-compatible, no API key needed)
 
+## GitHub Actions
+
+Manual deployment is available through [`.github/workflows/runpod-pod.yml`](./.github/workflows/runpod-pod.yml).
+
+Set this repository secret before running the workflow:
+
+- `RUNPOD_API_KEY` — RunPod API key used by the Terraform provider
+
+Then open the `RunPod Pod` workflow in GitHub Actions and choose one of:
+
+- `plan`
+- `apply`
+- `destroy`
+
+The workflow also accepts `ollama_model` and `use_spot` inputs, which map directly to the Terraform variables in this repo.
+
+`apply` and `destroy` use the protected GitHub Environment `runpod-production`. Configure required reviewers for that environment in GitHub before relying on those actions.
+
 ## Cost
 
 | Deployment | GPU | Cost | Scaling |
